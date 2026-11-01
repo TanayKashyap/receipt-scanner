@@ -62,20 +62,20 @@ const LOCAL_STORAGE_KEY = "receipt_scanner_demo_records";
 const INITIAL_DEMO_RECORDS = [
   {
     id: "rec_1",
-    Store: "Trader Joe's",
+    Store: "Tim Hortons",
     Date: "2026-10-28",
-    Amount: 48.25,
+    Amount: 14.85,
     Drive_Image_URL: "https://drive.google.com/file/d/demo_receipt_1/view",
-    notes: "Weekly groceries, organic produce & snacks",
+    notes: "Coffee & breakfast box",
     createdAt: new Date("2026-10-28T14:20:00").toISOString()
   },
   {
     id: "rec_2",
-    Store: "Target",
+    Store: "Canadian Tire",
     Date: "2026-10-25",
     Amount: 89.99,
     Drive_Image_URL: "https://drive.google.com/file/d/demo_receipt_2/view",
-    notes: "Home essentials & desk lamp",
+    notes: "Home tools & winter wiper fluid",
     createdAt: new Date("2026-10-25T11:15:00").toISOString()
   },
   {
@@ -89,11 +89,11 @@ const INITIAL_DEMO_RECORDS = [
   },
   {
     id: "rec_4",
-    Store: "Target",
+    Store: "Loblaws",
     Date: "2026-10-18",
-    Amount: 32.40,
+    Amount: 42.40,
     Drive_Image_URL: "https://drive.google.com/file/d/demo_receipt_4/view",
-    notes: "Stationery & USB-C cable",
+    notes: "Fresh produce & organic milk",
     createdAt: new Date("2026-10-18T09:30:00").toISOString()
   }
 ];

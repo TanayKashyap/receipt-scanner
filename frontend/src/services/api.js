@@ -16,33 +16,22 @@ export async function checkBackendHealth() {
 }
 
 export async function extractReceiptOCR(imageBase64, mimeType = "image/jpeg") {
-  try {
-    const res = await fetch(`${API_BASE_URL}/api/ocr/extract-base64`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        image_base64: imageBase64,
-        mime_type: mimeType
-      })
-    });
+  const res = await fetch(`${API_BASE_URL}/api/ocr/extract-base64`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      image_base64: imageBase64,
+      mime_type: mimeType
+    })
+  });
 
-    if (!res.ok) {
-      const errData = await res.json().catch(() => ({}));
-      throw new Error(errData.detail || `OCR Extraction failed (${res.status})`);
-    }
-
-    return await res.json();
-  } catch (err) {
-    console.warn("API OCR failed, falling back to simulated extraction:", err.message);
-    // Instant fallback if backend is offline
-    return {
-      Store: "Trader Joe's",
-      Date: new Date().toISOString().split("T")[0],
-      Amount: 42.75,
-      is_mock: true,
-      raw_response: "Client fallback extraction"
-    };
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    const message = formatErrorMessage(errData, `OCR Extraction failed (${res.status})`);
+    throw new Error(message);
   }
+
+  return await res.json();
 }
 
 function formatErrorMessage(errData, fallback) {

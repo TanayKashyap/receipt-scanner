@@ -76,12 +76,17 @@ def clean_json_response(raw_text: str) -> Dict[str, Any]:
         text = text.strip()
         
     try:
-        return json.loads(text)
+        data = json.loads(text)
+        if isinstance(data, list) and len(data) > 0 and isinstance(data[0], dict):
+            return data[0]
+        if isinstance(data, dict):
+            return data
     except json.JSONDecodeError:
         match = re.search(r"\{[^{}]*\}", text, re.DOTALL)
         if match:
             return json.loads(match.group(0))
         raise ValueError(f"Could not parse valid JSON from response: {text[:200]}")
+    return {}
 
 def extract_receipt_data(image_bytes: bytes, mime_type: str = "image/jpeg") -> ReceiptExtractionResult:
     """
@@ -130,12 +135,15 @@ def extract_receipt_data(image_bytes: bytes, mime_type: str = "image/jpeg") -> R
         import google.generativeai as genai
         genai.configure(api_key=api_key)
         
-        # Prioritize fastest low-cost model: gemini-3.8-flash
+        # Prioritize high-quota, sub-second Flash-Lite models
         candidate_models = [
             settings.GEMINI_MODEL,
-            "gemini-3.8-flash",
+            "gemini-flash-lite-latest",
+            "gemini-3.5-flash-lite",
+            "gemini-3.1-flash-lite",
+            "gemini-3.5-flash",
             "gemini-flash-latest",
-            "gemini-2.5-flash"
+            "gemini-3.8-flash"
         ]
         candidate_models = list(dict.fromkeys(candidate_models))
         

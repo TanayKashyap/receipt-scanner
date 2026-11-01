@@ -103,13 +103,13 @@ export default function App() {
       }
     } catch (err) {
       console.error("OCR Error:", err);
-      addToast(`OCR failed: ${err.message}`, "error");
-      // Fallback data so user is not stuck
+      addToast(`OCR failed: ${err.message}. You can enter details manually.`, "error");
+      // Provide clean manual entry so user is not blocked
       setExtractedData({
-        Store: "Unknown Store",
+        Store: "",
         Date: new Date().toISOString().split("T")[0],
         Amount: 0.0,
-        is_mock: true
+        is_mock: false
       });
     } finally {
       setIsProcessingOCR(false);
