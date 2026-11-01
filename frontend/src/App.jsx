@@ -4,15 +4,13 @@ import Navbar from "./components/Navbar";
 import CameraScanner from "./components/CameraScanner";
 import CorrectionLoop from "./components/CorrectionLoop";
 import ReceiptList from "./components/ReceiptList";
-import StatsOverview from "./components/StatsOverview";
 import ExportModal from "./components/ExportModal";
 import Toast from "./components/Toast";
 
 import { 
   extractReceiptOCR, 
   uploadReceiptToDrive, 
-  exportReceiptsToSheets,
-  checkBackendHealth 
+  exportReceiptsToSheets 
 } from "./services/api";
 import { 
   saveReceiptRecord, 
@@ -20,18 +18,13 @@ import {
   deleteReceiptRecord 
 } from "./services/firebase";
 
-import { 
-  Camera, 
-  LayoutDashboard, 
-  Sparkles, 
-  CheckCircle2 
-} from "lucide-react";
+import { Camera, FileSpreadsheet } from "lucide-react";
 
 export default function App() {
-  const { currentUser, accessToken, demoMode } = useAuth();
+  const { currentUser, accessToken, demoMode, loginWithGoogle } = useAuth();
 
-  // Navigation view: 'scan' | 'dashboard'
-  const [activeTab, setActiveTab] = useState("dashboard");
+  // Navigation view: 'dashboard' | 'scan' | 'verify'
+  const [activeView, setActiveView] = useState("dashboard");
 
   // Receipt capture & OCR flow state
   const [capturedImage, setCapturedImage] = useState(null);
@@ -49,9 +42,6 @@ export default function App() {
   const [isExporting, setIsExporting] = useState(false);
   const [exportResult, setExportResult] = useState(null);
 
-  // Backend Health check status
-  const [backendStatus, setBackendStatus] = useState({ status: "checking", gemini_configured: false });
-
   // Floating Toast notifications
   const [toasts, setToasts] = useState([]);
 
@@ -67,10 +57,8 @@ export default function App() {
     setToasts(prev => prev.filter(t => t.id !== id));
   };
 
-  // Initial load: Fetch receipts & health
   useEffect(() => {
     loadReceipts();
-    checkBackendHealth().then(status => setBackendStatus(status));
   }, [currentUser]);
 
   const loadReceipts = async () => {
@@ -91,20 +79,16 @@ export default function App() {
     setCapturedImage(base64Image);
     setCapturedMimeType(mimeType);
     setIsProcessingOCR(true);
+    setActiveView("verify");
 
     try {
-      addToast("Sending receipt to Gemini AI for fast CAD extraction...", "info");
+      addToast("Analyzing receipt with Gemini Flash AI...", "info");
       const ocrResult = await extractReceiptOCR(base64Image, mimeType);
       setExtractedData(ocrResult);
-      if (ocrResult.is_mock) {
-        addToast("Receipt parsed using demo OCR. Configure Gemini API key for live inference.", "info");
-      } else {
-        addToast("Gemini successfully extracted receipt fields in CAD!", "success");
-      }
+      addToast("Receipt details extracted!", "success");
     } catch (err) {
       console.error("OCR Error:", err);
-      addToast(`OCR failed: ${err.message}. You can enter details manually.`, "error");
-      // Provide clean manual entry so user is not blocked
+      addToast(`OCR extraction failed: ${err.message}. You can enter details manually.`, "error");
       setExtractedData({
         Store: "",
         Date: new Date().toISOString().split("T")[0],
@@ -132,7 +116,7 @@ export default function App() {
 
     setIsSaving(true);
     try {
-      addToast("Archiving original image to Google Drive...", "info");
+      addToast("Archiving image to Google Drive...", "info");
 
       // 1. Upload to user's Google Drive
       const driveUpload = await uploadReceiptToDrive({
@@ -145,21 +129,20 @@ export default function App() {
       });
 
       // 2. Save document to Firestore
-      const newRecord = await saveReceiptRecord(currentUser?.uid, {
+      await saveReceiptRecord(currentUser?.uid, {
         Store: verifiedData.Store,
         Date: verifiedData.Date,
         Amount: verifiedData.Amount,
-        notes: verifiedData.notes,
         Drive_Image_URL: driveUpload.webViewLink
       });
 
-      addToast("Receipt archived to Drive and saved to Database!", "success");
+      addToast("Receipt saved to Drive and database!", "success");
 
       // Reset capture flow and refresh list
       setCapturedImage(null);
       setExtractedData(null);
       await loadReceipts();
-      setActiveTab("dashboard");
+      setActiveView("dashboard");
     } catch (err) {
       console.error("Save error:", err);
       addToast(`Failed to save receipt: ${err.message}`, "error");
@@ -168,15 +151,16 @@ export default function App() {
     }
   };
 
-  const handleRetake = () => {
+  const handleReturnToDashboard = () => {
+    if (capturedImage && !window.confirm("Discard current receipt scan?")) return;
     setCapturedImage(null);
     setExtractedData(null);
     setIsProcessingOCR(false);
+    setActiveView("dashboard");
   };
 
-  // Delete Receipt
   const handleDeleteReceipt = async (receiptId) => {
-    if (!window.confirm("Are you sure you want to delete this receipt record?")) return;
+    if (!window.confirm("Delete this receipt record?")) return;
     try {
       await deleteReceiptRecord(currentUser?.uid, receiptId);
       setReceipts(prev => prev.filter(r => r.id !== receiptId));
@@ -186,7 +170,6 @@ export default function App() {
     }
   };
 
-  // Step 5: Google Sheets Export
   const handleTriggerExport = async (sheetTitle) => {
     let token = accessToken || localStorage.getItem("receipt_scanner_google_token");
     if (!token && !demoMode) {
@@ -200,6 +183,7 @@ export default function App() {
       }
     }
 
+    setIsExporting(true);
     const sanitizedRecords = receipts.map(r => ({
       id: r.id || "",
       Store: r.Store || "Unknown Store",
@@ -230,75 +214,92 @@ export default function App() {
       });
   };
 
+  const todayStr = new Date().toISOString().split("T")[0];
+
   return (
-    <div className="app-container">
-      {/* Toast Notifications */}
+    <div className="app-wrapper">
       <Toast toasts={toasts} onDismiss={dismissToast} />
 
-      {/* Top Navbar */}
-      <Navbar />
+      {/* Top Navbar matching mockup header */}
+      <Navbar 
+        view={activeView === "dashboard" ? "dashboard" : (capturedImage ? "verify" : "scan")}
+        onBack={handleReturnToDashboard}
+      />
 
-      {/* Main Content Areas */}
-      <main>
-        {/* Verification / Correction Loop View */}
-        {capturedImage && extractedData && (
-          <CorrectionLoop 
-            receiptImage={capturedImage}
-            extractedData={extractedData}
-            onSave={handleSaveReceipt}
-            onRetake={handleRetake}
-            isSaving={isSaving}
-          />
+      <div className="app-content">
+        {/* VIEW 1: Dashboard (Left Screen Mockup) */}
+        {activeView === "dashboard" && !capturedImage && (
+          <>
+            {/* Drive Connected Status Badge */}
+            <div className="drive-status-row">
+              <div className="drive-status-badge">
+                <svg width="14" height="14" viewBox="0 0 87.3 78" fill="none">
+                  <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/>
+                  <path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44c-.8 1.4-1.2 2.95-1.2 4.5h27.5z" fill="#00ac47"/>
+                  <path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z" fill="#ea4335"/>
+                  <path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d"/>
+                  <path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc"/>
+                  <path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 28h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/>
+                </svg>
+                <span>Drive Connected</span>
+              </div>
+            </div>
+
+            {/* Green Google Sheets Export Banner */}
+            <button 
+              className="sheets-banner-card animate-fade-in"
+              onClick={() => {
+                setExportResult(null);
+                setExportModalOpen(true);
+              }}
+              title="Export all receipts to formatted Google Sheet"
+            >
+              <div className="sheets-banner-icon">
+                <FileSpreadsheet size={22} />
+              </div>
+              <div className="sheets-banner-text">
+                <div className="sheets-banner-title">Export to Google Sheets</div>
+                <div className="sheets-banner-sub">Sheets/Receipts_Export_{todayStr}</div>
+              </div>
+            </button>
+
+            {/* Receipts Table Card */}
+            <ReceiptList 
+              receipts={receipts} 
+              onDelete={handleDeleteReceipt}
+            />
+
+            {/* Bottom Navy Scan Receipt Button */}
+            <div className="bottom-scan-bar">
+              <button 
+                className="scan-main-btn" 
+                onClick={() => setActiveView("scan")}
+              >
+                <Camera size={20} />
+                <span>Scan Receipt</span>
+              </button>
+            </div>
+          </>
         )}
 
-        {/* Camera Scanner View */}
-        {activeTab === "scan" && !extractedData && (
+        {/* VIEW 2: Camera Scanner (Live camera or file upload) */}
+        {activeView === "scan" && !extractedData && (
           <CameraScanner 
-            onCapture={handlePhotoCapture} 
+            onCapture={handlePhotoCapture}
             isProcessing={isProcessingOCR}
           />
         )}
 
-        {/* Dashboard View */}
-        {activeTab === "dashboard" && !capturedImage && (
-          <div className="animate-fade-in">
-            <StatsOverview receipts={receipts} />
-            <ReceiptList 
-              receipts={receipts} 
-              onDelete={handleDeleteReceipt}
-              onExportClick={() => {
-                setExportResult(null);
-                setExportModalOpen(true);
-              }}
-            />
-          </div>
+        {/* VIEW 3: Scan & Verify (Right Screen Mockup) */}
+        {capturedImage && (
+          <CorrectionLoop 
+            receiptImage={capturedImage}
+            extractedData={extractedData}
+            onSave={handleSaveReceipt}
+            isSaving={isSaving}
+          />
         )}
-      </main>
-
-      {/* Floating Bottom Navigation Bar (Optimized for Pixel 9 Ergonomic Reach) */}
-      {!capturedImage && (
-        <nav className="mobile-nav-bar" aria-label="Main Navigation">
-          <button 
-            className={`mobile-nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
-            onClick={() => {
-              setCapturedImage(null);
-              setExtractedData(null);
-              setActiveTab("dashboard");
-            }}
-          >
-            <LayoutDashboard size={18} />
-            <span>Records</span>
-          </button>
-
-          <button 
-            className={`mobile-nav-item ${activeTab === 'scan' ? 'active' : ''}`}
-            onClick={() => setActiveTab("scan")}
-          >
-            <Camera size={18} />
-            <span>Scan Receipt</span>
-          </button>
-        </nav>
-      )}
+      </div>
 
       {/* Google Sheets Export Modal */}
       <ExportModal 

@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Camera, RefreshCw, Upload, Sparkles, AlertTriangle, Image as ImageIcon } from "lucide-react";
+import { Camera, RefreshCw, Upload, Sparkles, AlertTriangle } from "lucide-react";
 import { compressReceiptImage } from "../services/imageUtils";
 
 export default function CameraScanner({ onCapture, isProcessing }) {
   const [streamActive, setStreamActive] = useState(false);
-  const [facingMode, setFacingMode] = useState("environment"); // default rear camera
+  const [facingMode, setFacingMode] = useState("environment");
   const [cameraError, setCameraError] = useState(null);
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -22,7 +22,7 @@ export default function CameraScanner({ onCapture, isProcessing }) {
     stopCamera();
 
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      setCameraError("Camera API not supported in this browser. Please use photo upload.");
+      setCameraError("Camera API not supported in this browser. Please use photo upload below.");
       return;
     }
 
@@ -44,7 +44,7 @@ export default function CameraScanner({ onCapture, isProcessing }) {
       }
     } catch (err) {
       console.warn("Unable to access camera:", err);
-      setCameraError("Camera access permission denied or unavailable. Use photo upload below.");
+      setCameraError("Camera permission denied or camera in use. Please use photo upload.");
       setStreamActive(false);
     }
   };
@@ -59,7 +59,7 @@ export default function CameraScanner({ onCapture, isProcessing }) {
   };
 
   const flipCamera = () => {
-    setFacingMode(prev => prev === "environment" ? "user" : "environment");
+    setFacingMode(prev => (prev === "environment" ? "user" : "environment"));
   };
 
   const capturePhoto = async () => {
@@ -78,11 +78,10 @@ export default function CameraScanner({ onCapture, isProcessing }) {
     stopCamera();
 
     try {
-      // Compress to ~150KB for near-instant low-cost Gemini inference
-      const compressed = await compressReceiptImage(base64Image, 1200, 0.8);
+      const compressed = await compressReceiptImage(base64Image, 1600, 0.85);
       onCapture(compressed, "image/jpeg");
     } catch (err) {
-      console.warn("Image compression fallback:", err);
+      console.warn("Compression fallback:", err);
       onCapture(base64Image, "image/jpeg");
     }
   };
@@ -95,8 +94,7 @@ export default function CameraScanner({ onCapture, isProcessing }) {
     reader.onload = async () => {
       stopCamera();
       try {
-        // Compress client-side before sending to backend
-        const compressed = await compressReceiptImage(reader.result, 1200, 0.8);
+        const compressed = await compressReceiptImage(reader.result, 1600, 0.85);
         onCapture(compressed, "image/jpeg");
       } catch (err) {
         console.warn("Upload compression fallback:", err);
@@ -107,9 +105,8 @@ export default function CameraScanner({ onCapture, isProcessing }) {
   };
 
   return (
-    <div className="camera-scanner-container animate-fade-in">
-      <div className="viewfinder-wrapper glass-panel">
-        {/* Hidden Canvas for capture rendering */}
+    <div className="scanner-card animate-fade-in">
+      <div className="scanner-viewfinder">
         <canvas ref={canvasRef} style={{ display: "none" }} />
 
         {/* Live Camera View */}
@@ -117,78 +114,56 @@ export default function CameraScanner({ onCapture, isProcessing }) {
           ref={videoRef} 
           playsInline 
           muted 
-          className="viewfinder-video"
+          className="scanner-video"
           style={{ display: streamActive ? "block" : "none" }}
         />
 
-        {/* Viewfinder Target Framing & Scan Line */}
+        {/* Framing corners */}
         {streamActive && !isProcessing && (
-          <div className="receipt-target-frame">
-            <span className="frame-corner frame-corner-tl" />
-            <span className="frame-corner frame-corner-tr" />
-            <span className="frame-corner frame-corner-bl" />
-            <span className="frame-corner frame-corner-br" />
-            <div className="laser-scan-line" />
-            <div style={{ color: "rgba(255,255,255,0.7)", fontSize: "0.85rem", marginTop: "auto", marginBottom: "8px" }}>
-              Align receipt within frame
-            </div>
+          <div className="verify-reticle" style={{ top: "8%", bottom: "8%", left: "10%", right: "10%" }}>
+            <span className="verify-corner verify-corner-tl" />
+            <span className="verify-corner verify-corner-tr" />
+            <span className="verify-corner verify-corner-bl" />
+            <span className="verify-corner verify-corner-br" />
           </div>
         )}
 
-        {/* Processing State Overlay */}
+        {/* Processing State */}
         {isProcessing && (
           <div style={{ 
             position: "absolute", 
             inset: 0, 
-            background: "rgba(11, 15, 23, 0.88)", 
+            background: "rgba(15, 39, 68, 0.88)", 
             display: "flex", 
             flexDirection: "column", 
             alignItems: "center", 
             justifyContent: "center",
-            gap: "14px",
+            gap: "12px",
+            color: "#ffffff",
             zIndex: 10
           }}>
-            <Sparkles size={36} color="var(--accent-emerald-light)" className="animate-spin" />
-            <div style={{ fontWeight: 700, fontSize: "1.1rem", color: "#ffffff" }}>
-              Gemini AI Analyzing Receipt (CAD)...
+            <Sparkles size={36} className="animate-spin" color="#137333" />
+            <div style={{ fontWeight: 700, fontSize: "1.1rem" }}>
+              Analyzing Receipt (CAD)...
             </div>
-            <div style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>
-              Fast Extraction: Store, Date & Total (CAD)
+            <div style={{ fontSize: "0.85rem", opacity: 0.8 }}>
+              Extracting Store, Date & CAD Amount
             </div>
           </div>
         )}
 
-        {/* Fallback View if Camera Denied or Unavailable */}
+        {/* Fallback View if Camera Denied */}
         {!streamActive && !isProcessing && (
-          <div style={{ 
-            padding: "24px", 
-            textAlign: "center", 
-            display: "flex", 
-            flexDirection: "column", 
-            alignItems: "center", 
-            gap: "14px" 
-          }}>
-            <div style={{
-              width: 56,
-              height: 56,
-              borderRadius: "50%",
-              background: "var(--accent-emerald-subtle)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "var(--accent-emerald-light)"
-            }}>
-              <Camera size={28} />
-            </div>
-            <div style={{ fontWeight: 600, fontSize: "1.05rem" }}>Ready to Scan Receipt</div>
+          <div style={{ padding: "24px", textAlign: "center", color: "#ffffff", display: "flex", flexDirection: "column", alignItems: "center", gap: "10px" }}>
+            <Camera size={36} color="rgba(255,255,255,0.7)" />
+            <div style={{ fontWeight: 600 }}>Ready to Scan Receipt</div>
             {cameraError && (
-              <div style={{ color: "var(--accent-amber)", fontSize: "0.825rem", maxWidth: "340px", display: "flex", alignItems: "center", gap: "6px" }}>
-                <AlertTriangle size={16} />
-                <span>{cameraError}</span>
+              <div style={{ color: "#fca5a5", fontSize: "0.8rem", maxWidth: "280px" }}>
+                {cameraError}
               </div>
             )}
-            <button className="btn btn-secondary" onClick={startCamera}>
-              <RefreshCw size={15} />
+            <button className="btn btn-outline" onClick={startCamera} style={{ marginTop: "4px", padding: "8px 16px" }}>
+              <RefreshCw size={14} />
               <span>Retry Camera</span>
             </button>
           </div>
@@ -196,12 +171,11 @@ export default function CameraScanner({ onCapture, isProcessing }) {
       </div>
 
       {/* Control Buttons */}
-      <div className="camera-controls-bar">
-        {/* Flip camera */}
+      <div className="scanner-controls">
         <button 
-          className="btn btn-secondary btn-icon" 
+          className="btn btn-outline btn-icon" 
           onClick={flipCamera} 
-          title="Switch Front/Rear Camera"
+          title="Flip Camera"
           disabled={!streamActive || isProcessing}
         >
           <RefreshCw size={18} />
@@ -209,26 +183,25 @@ export default function CameraScanner({ onCapture, isProcessing }) {
 
         {/* Shutter Button */}
         <button 
-          className="shutter-btn" 
+          className="shutter-circle-btn" 
           onClick={capturePhoto}
           disabled={!streamActive || isProcessing}
-          title="Capture Receipt Photo"
+          title="Capture Photo"
         >
-          <div className="shutter-inner" />
+          <div className="shutter-circle-inner" />
         </button>
 
-        {/* Upload from file / photo library */}
+        {/* File Upload Button */}
         <button 
-          className="btn btn-secondary btn-icon" 
+          className="btn btn-outline btn-icon" 
           onClick={() => fileInputRef.current && fileInputRef.current.click()}
-          title="Upload receipt image from device"
+          title="Upload from Photo Library"
           disabled={isProcessing}
         >
           <Upload size={18} />
         </button>
       </div>
 
-      {/* Hidden File Input */}
       <input 
         ref={fileInputRef} 
         type="file" 
