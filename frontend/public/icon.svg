@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </linearGradient>
+    <linearGradient id="primary" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="50%" stop-color="#6366f1"/>
+      <stop offset="100%" stop-color="#a855f7"/>
+    </linearGradient>
+    <linearGradient id="beam" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="rgba(56, 189, 248, 0)"/>
+      <stop offset="50%" stop-color="rgba(56, 189, 248, 0.9)"/>
+      <stop offset="100%" stop-color="rgba(56, 189, 248, 0)"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="12" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+  
+  <!-- App Background Tile -->
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <rect width="510" height="510" x="1" y="1" rx="111" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="2"/>
+
+  <!-- Receipt Paper Body -->
+  <g transform="translate(136, 96)">
+    <!-- Shadow -->
+    <path d="M 0,0 L 240,0 L 240,290 L 210,320 L 180,290 L 150,320 L 120,290 L 90,320 L 60,290 L 30,320 L 0,290 Z" 
+          fill="rgba(0,0,0,0.4)" transform="translate(0, 10)" filter="url(#glow)"/>
+    <!-- Paper -->
+    <path d="M 0,0 L 240,0 L 240,290 L 210,320 L 180,290 L 150,320 L 120,290 L 90,320 L 60,290 L 30,320 L 0,290 Z" 
+          fill="#ffffff" opacity="0.95"/>
+    
+    <!-- Receipt Header Emblem -->
+    <circle cx="120" cy="50" r="18" fill="url(#primary)"/>
+    <rect x="60" y="85" width="120" height="8" rx="4" fill="#94a3b8"/>
+    <rect x="80" y="105" width="80" height="6" rx="3" fill="#cbd5e1"/>
+
+    <!-- Receipt Line Items -->
+    <rect x="40" y="135" width="100" height="6" rx="3" fill="#64748b"/>
+    <rect x="165" y="135" width="35" height="6" rx="3" fill="#64748b"/>
+
+    <rect x="40" y="155" width="80" height="6" rx="3" fill="#64748b"/>
+    <rect x="165" y="155" width="35" height="6" rx="3" fill="#64748b"/>
+
+    <rect x="40" y="175" width="90" height="6" rx="3" fill="#64748b"/>
+    <rect x="165" y="175" width="35" height="6" rx="3" fill="#64748b"/>
+
+    <!-- Divider Line -->
+    <line x1="40" y1="205" x2="200" y2="205" stroke="#cbd5e1" stroke-dasharray="4 4" stroke-width="2"/>
+
+    <!-- Total -->
+    <rect x="40" y="225" width="60" height="9" rx="4" fill="#0f172a"/>
+    <rect x="145" y="222" width="55" height="13" rx="4" fill="url(#primary)"/>
+
+    <!-- Barcode simulation -->
+    <rect x="60" y="255" width="4" height="20" fill="#94a3b8"/>
+    <rect x="70" y="255" width="8" height="20" fill="#94a3b8"/>
+    <rect x="84" y="255" width="3" height="20" fill="#94a3b8"/>
+    <rect x="94" y="255" width="10" height="20" fill="#94a3b8"/>
+    <rect x="110" y="255" width="4" height="20" fill="#94a3b8"/>
+    <rect x="120" y="255" width="7" height="20" fill="#94a3b8"/>
+    <rect x="133" y="255" width="3" height="20" fill="#94a3b8"/>
+    <rect x="142" y="255" width="12" height="20" fill="#94a3b8"/>
+    <rect x="160" y="255" width="5" height="20" fill="#94a3b8"/>
+    <rect x="172" y="255" width="8" height="20" fill="#94a3b8"/>
+
+    <!-- Glowing Scan Line -->
+    <g transform="translate(-30, 160)">
+      <rect x="0" y="0" width="300" height="8" rx="4" fill="url(#beam)" filter="url(#glow)"/>
+      <circle cx="150" cy="4" r="5" fill="#38bdf8" filter="url(#glow)"/>
+    </g>
+  </g>
+</svg>

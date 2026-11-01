@@ -1,0 +1,19 @@
+{
+  "name": "Receipt Scanner — AI Expense Digitizer",
+  "short_name": "ReceiptScan",
+  "description": "Digitize, verify, and organize physical receipts with Gemini AI, Google Drive archiving, and Google Sheets export.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#090d16",
+  "theme_color": "#0f172a",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["finance", "productivity", "utilities"]
+}
