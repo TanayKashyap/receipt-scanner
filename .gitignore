@@ -31,6 +31,7 @@ venv/
 .venv/
 ENV/
 env/
+.firebase/
 
 # Environment Variables
 .env

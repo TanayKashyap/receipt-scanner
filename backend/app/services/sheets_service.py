@@ -65,19 +65,37 @@ def export_receipts_to_sheet(
         # 2. Get or create parent folder in user's Drive
         root_folder_id = get_or_create_folder(drive_service, folder_name=settings.DRIVE_APP_FOLDER)
         
-        # 3. Create the Google Spreadsheet directly inside the folder
-        file_metadata = {
-            "name": actual_title,
-            "mimeType": "application/vnd.google-apps.spreadsheet",
-            "parents": [root_folder_id]
+        # 3. Create Spreadsheet using Google Sheets API
+        spreadsheet_body = {
+            "properties": {
+                "title": actual_title
+            }
         }
-        created_file = drive_service.files().create(
-            body=file_metadata,
-            fields="id, name, webViewLink"
+        created_sheet = sheets_service.spreadsheets().create(
+            body=spreadsheet_body,
+            fields="spreadsheetId,spreadsheetUrl,sheets(properties(sheetId,title))"
         ).execute()
         
-        spreadsheet_id = created_file["id"]
-        spreadsheet_url = created_file.get("webViewLink", f"https://docs.google.com/spreadsheets/d/{spreadsheet_id}/edit")
+        spreadsheet_id = created_sheet["spreadsheetId"]
+        spreadsheet_url = created_sheet.get(
+            "spreadsheetUrl", 
+            f"https://docs.google.com/spreadsheets/d/{spreadsheet_id}/edit"
+        )
+        
+        # Extract first sheet properties (sheetId and localized title)
+        first_sheet = created_sheet["sheets"][0]["properties"]
+        target_sheet_id = first_sheet.get("sheetId", 0)
+        target_sheet_title = first_sheet.get("title", "Sheet1")
+        
+        # Move spreadsheet into the Receipt_Scanner_App folder
+        try:
+            drive_service.files().update(
+                fileId=spreadsheet_id,
+                addParents=root_folder_id,
+                fields="id, parents"
+            ).execute()
+        except Exception as move_err:
+            logger.warning(f"Could not move sheet to folder (still created in root): {move_err}")
         
         # 4. Prepare structured row data
         # Row 1: Title Banner
@@ -105,7 +123,7 @@ def export_receipts_to_sheet(
             format_requests.append({
                 "repeatCell": {
                     "range": {
-                        "sheetId": 0,
+                        "sheetId": target_sheet_id,
                         "startRowIndex": current_row_idx,
                         "endRowIndex": current_row_idx + 1,
                         "startColumnIndex": 0,
@@ -139,7 +157,7 @@ def export_receipts_to_sheet(
             format_requests.append({
                 "repeatCell": {
                     "range": {
-                        "sheetId": 0,
+                        "sheetId": target_sheet_id,
                         "startRowIndex": current_row_idx,
                         "endRowIndex": current_row_idx + 1,
                         "startColumnIndex": 1,
@@ -168,14 +186,15 @@ def export_receipts_to_sheet(
         rows.append(["GRAND TOTAL", "", total_amount, "", f"All {len(records)} entries"])
         
         # 5. Push row values to Sheet
+        target_range = f"'{target_sheet_title}'!A1"
         value_range = {
-            "range": "Sheet1!A1",
+            "range": target_range,
             "majorDimension": "ROWS",
             "values": rows
         }
         sheets_service.spreadsheets().values().update(
             spreadsheetId=spreadsheet_id,
-            range="Sheet1!A1",
+            range=target_range,
             valueInputOption="USER_ENTERED",
             body=value_range
         ).execute()
@@ -184,7 +203,7 @@ def export_receipts_to_sheet(
         # Title styling (Row 1)
         format_requests.append({
             "repeatCell": {
-                "range": {"sheetId": 0, "startRowIndex": 0, "endRowIndex": 1, "startColumnIndex": 0, "endColumnIndex": 5},
+                "range": {"sheetId": target_sheet_id, "startRowIndex": 0, "endRowIndex": 1, "startColumnIndex": 0, "endColumnIndex": 5},
                 "cell": {
                     "userEnteredFormat": {
                         "backgroundColor": {"red": 0.06, "green": 0.09, "blue": 0.16}, # Dark slate #0f172a
@@ -198,7 +217,7 @@ def export_receipts_to_sheet(
         # Table Header styling (Row 4 - index 3)
         format_requests.append({
             "repeatCell": {
-                "range": {"sheetId": 0, "startRowIndex": 3, "endRowIndex": 4, "startColumnIndex": 0, "endColumnIndex": 5},
+                "range": {"sheetId": target_sheet_id, "startRowIndex": 3, "endRowIndex": 4, "startColumnIndex": 0, "endColumnIndex": 5},
                 "cell": {
                     "userEnteredFormat": {
                         "backgroundColor": {"red": 0.12, "green": 0.16, "blue": 0.25}, # #1f2937
@@ -213,7 +232,7 @@ def export_receipts_to_sheet(
         # Grand Total Row styling
         format_requests.append({
             "repeatCell": {
-                "range": {"sheetId": 0, "startRowIndex": grand_total_row_idx, "endRowIndex": grand_total_row_idx + 1, "startColumnIndex": 0, "endColumnIndex": 5},
+                "range": {"sheetId": target_sheet_id, "startRowIndex": grand_total_row_idx, "endRowIndex": grand_total_row_idx + 1, "startColumnIndex": 0, "endColumnIndex": 5},
                 "cell": {
                     "userEnteredFormat": {
                         "backgroundColor": {"red": 0.95, "green": 0.96, "blue": 0.98},
@@ -231,7 +250,7 @@ def export_receipts_to_sheet(
         # Currency formatting for Amount column (Column C / Index 2)
         format_requests.append({
             "repeatCell": {
-                "range": {"sheetId": 0, "startRowIndex": 4, "endRowIndex": len(rows), "startColumnIndex": 2, "endColumnIndex": 3},
+                "range": {"sheetId": target_sheet_id, "startRowIndex": 4, "endRowIndex": len(rows), "startColumnIndex": 2, "endColumnIndex": 3},
                 "cell": {
                     "userEnteredFormat": {
                         "numberFormat": {"type": "CURRENCY", "pattern": "$#,##0.00"},
@@ -246,7 +265,7 @@ def export_receipts_to_sheet(
         format_requests.append({
             "updateSheetProperties": {
                 "properties": {
-                    "sheetId": 0,
+                    "sheetId": target_sheet_id,
                     "gridProperties": {
                         "frozenRowCount": 4
                     }
@@ -259,7 +278,7 @@ def export_receipts_to_sheet(
         format_requests.append({
             "autoResizeDimensions": {
                 "dimensions": {
-                    "sheetId": 0,
+                    "sheetId": target_sheet_id,
                     "dimension": "COLUMNS",
                     "startIndex": 0,
                     "endIndex": 5

@@ -54,39 +54,32 @@ export async function uploadReceiptToDrive({
   amount,
   accessToken
 }) {
-  const tokenToUse = accessToken || "demo_token_user";
+  const tokenToUse = accessToken || localStorage.getItem("receipt_scanner_google_token");
   
-  try {
-    const res = await fetch(`${API_BASE_URL}/api/drive/upload`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        image_base64: imageBase64,
-        filename: filename,
-        mime_type: mimeType || "image/jpeg",
-        store: store,
-        date: date,
-        amount: amount,
-        access_token: tokenToUse
-      })
-    });
-
-    if (!res.ok) {
-      const errData = await res.json().catch(() => ({}));
-      throw new Error(errData.detail || `Drive upload failed (${res.status})`);
-    }
-
-    return await res.json();
-  } catch (err) {
-    console.warn("Backend Drive upload failed, generating simulated Drive link:", err.message);
-    const mockId = `demo_receipt_${Date.now()}`;
-    return {
-      file_id: mockId,
-      name: filename || `Receipt_${store || 'Unknown'}.jpg`,
-      webViewLink: `https://drive.google.com/file/d/${mockId}/view`,
-      folder_id: "demo_folder_id"
-    };
+  if (!tokenToUse) {
+    throw new Error("Google Drive access token missing. Please sign in with Google.");
   }
+
+  const res = await fetch(`${API_BASE_URL}/api/drive/upload`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      image_base64: imageBase64,
+      filename: filename,
+      mime_type: mimeType || "image/jpeg",
+      store: store,
+      date: date,
+      amount: amount,
+      access_token: tokenToUse
+    })
+  });
+
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.detail || `Drive upload failed (${res.status})`);
+  }
+
+  return await res.json();
 }
 
 export async function exportReceiptsToSheets({
@@ -94,40 +87,26 @@ export async function exportReceiptsToSheets({
   records,
   sheetTitle
 }) {
-  const tokenToUse = accessToken || "demo_token_user";
+  const tokenToUse = accessToken || localStorage.getItem("receipt_scanner_google_token");
 
-  try {
-    const res = await fetch(`${API_BASE_URL}/api/sheets/export`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        access_token: tokenToUse,
-        records: records,
-        sheet_title: sheetTitle
-      })
-    });
-
-    if (!res.ok) {
-      const errData = await res.json().catch(() => ({}));
-      throw new Error(errData.detail || `Sheets export failed (${res.status})`);
-    }
-
-    return await res.json();
-  } catch (err) {
-    console.warn("Backend Sheets export failed, generating simulated Sheet response:", err.message);
-    const mockId = `demo_sheet_${Date.now()}`;
-    const today = new Date().toISOString().split("T")[0];
-    const total = records.reduce((sum, r) => sum + (parseFloat(r.Amount) || 0), 0);
-    const stores = new Set(records.map(r => r.Store)).size;
-
-    return {
-      spreadsheet_id: mockId,
-      spreadsheet_url: `https://docs.google.com/spreadsheets/d/${mockId}/edit`,
-      title: sheetTitle || `Receipts_Export_${today}`,
-      records_count: records.length,
-      stores_count: stores,
-      total_amount: total,
-      folder_id: "demo_root_folder_id"
-    };
+  if (!tokenToUse) {
+    throw new Error("Google Sheets access token missing. Please sign in with Google to grant permission.");
   }
+
+  const res = await fetch(`${API_BASE_URL}/api/sheets/export`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      access_token: tokenToUse,
+      records: records,
+      sheet_title: sheetTitle
+    })
+  });
+
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.detail || `Sheets export failed (${res.status})`);
+  }
+
+  return await res.json();
 }

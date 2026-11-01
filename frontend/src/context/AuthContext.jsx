@@ -15,7 +15,9 @@ const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
-  const [accessToken, setAccessToken] = useState(null);
+  const [accessToken, setAccessToken] = useState(() => {
+    return localStorage.getItem("receipt_scanner_google_token") || null;
+  });
   const [loading, setLoading] = useState(true);
   const [demoMode, setDemoMode] = useState(!isFirebaseConfigured);
 
@@ -56,8 +58,9 @@ export function AuthProvider({ children }) {
     try {
       const result = await signInWithPopup(auth, googleProvider);
       const credential = GoogleAuthProvider.credentialFromResult(result);
-      if (credential) {
+      if (credential && credential.accessToken) {
         setAccessToken(credential.accessToken);
+        localStorage.setItem("receipt_scanner_google_token", credential.accessToken);
       }
       setCurrentUser(result.user);
       setDemoMode(false);
@@ -72,6 +75,7 @@ export function AuthProvider({ children }) {
     if (isFirebaseConfigured && auth) {
       await signOut(auth);
     }
+    localStorage.removeItem("receipt_scanner_google_token");
     setCurrentUser(null);
     setAccessToken(null);
   };

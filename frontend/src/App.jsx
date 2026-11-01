@@ -122,6 +122,18 @@ export default function App() {
 
   // Step 4: Confirm & Save (Drive Upload + Firestore record)
   const handleSaveReceipt = async (verifiedData) => {
+    let token = accessToken || localStorage.getItem("receipt_scanner_google_token");
+    if (!token && !demoMode) {
+      addToast("Please sign in with Google to save to Drive.", "info");
+      try {
+        await loginWithGoogle();
+        token = localStorage.getItem("receipt_scanner_google_token");
+      } catch (e) {
+        addToast("Google Sign-In required to archive to Drive.", "error");
+        return;
+      }
+    }
+
     setIsSaving(true);
     try {
       addToast("Archiving original image to Google Drive...", "info");
@@ -133,7 +145,7 @@ export default function App() {
         store: verifiedData.Store,
         date: verifiedData.Date,
         amount: verifiedData.Amount,
-        accessToken: accessToken
+        accessToken: token
       });
 
       // 2. Save document to Firestore
@@ -179,12 +191,24 @@ export default function App() {
   };
 
   // Step 5: Google Sheets Export
-  const handleTriggerExport = (sheetTitle) => {
+  const handleTriggerExport = async (sheetTitle) => {
+    let token = accessToken || localStorage.getItem("receipt_scanner_google_token");
+    if (!token && !demoMode) {
+      addToast("Please sign in with Google to authorize Google Sheets export.", "info");
+      try {
+        await loginWithGoogle();
+        token = localStorage.getItem("receipt_scanner_google_token");
+      } catch (e) {
+        addToast("Google Sign-In required for Sheets export.", "error");
+        return;
+      }
+    }
+
     setIsExporting(true);
     setExportResult(null);
 
     exportReceiptsToSheets({
-      accessToken: accessToken,
+      accessToken: token,
       records: receipts,
       sheetTitle: sheetTitle
     })
