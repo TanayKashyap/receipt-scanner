@@ -204,12 +204,21 @@ export default function App() {
       }
     }
 
-    setIsExporting(true);
-    setExportResult(null);
+    const sanitizedRecords = receipts.map(r => ({
+      id: r.id || "",
+      Store: r.Store || "Unknown Store",
+      Date: r.Date || new Date().toISOString().split("T")[0],
+      Amount: parseFloat(r.Amount) || 0.0,
+      Drive_Image_URL: r.Drive_Image_URL || "",
+      notes: r.notes || "",
+      createdAt: typeof r.createdAt === "object" && r.createdAt !== null
+        ? (r.createdAt.seconds ? new Date(r.createdAt.seconds * 1000).toISOString() : JSON.stringify(r.createdAt))
+        : String(r.createdAt || "")
+    }));
 
     exportReceiptsToSheets({
       accessToken: token,
-      records: receipts,
+      records: sanitizedRecords,
       sheetTitle: sheetTitle
     })
       .then(res => {

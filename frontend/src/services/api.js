@@ -45,6 +45,18 @@ export async function extractReceiptOCR(imageBase64, mimeType = "image/jpeg") {
   }
 }
 
+function formatErrorMessage(errData, fallback) {
+  if (!errData || !errData.detail) return fallback;
+  if (typeof errData.detail === "string") return errData.detail;
+  if (Array.isArray(errData.detail)) {
+    return errData.detail.map(d => `${d.loc ? d.loc.slice(-1)[0] + ': ' : ''}${d.msg || JSON.stringify(d)}`).join(', ');
+  }
+  if (typeof errData.detail === "object") {
+    return JSON.stringify(errData.detail);
+  }
+  return fallback;
+}
+
 export async function uploadReceiptToDrive({
   imageBase64,
   filename,
@@ -76,7 +88,7 @@ export async function uploadReceiptToDrive({
 
   if (!res.ok) {
     const errData = await res.json().catch(() => ({}));
-    throw new Error(errData.detail || `Drive upload failed (${res.status})`);
+    throw new Error(formatErrorMessage(errData, `Drive upload failed (${res.status})`));
   }
 
   return await res.json();
@@ -105,7 +117,7 @@ export async function exportReceiptsToSheets({
 
   if (!res.ok) {
     const errData = await res.json().catch(() => ({}));
-    throw new Error(errData.detail || `Sheets export failed (${res.status})`);
+    throw new Error(formatErrorMessage(errData, `Sheets export failed (${res.status})`));
   }
 
   return await res.json();

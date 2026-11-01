@@ -1,5 +1,5 @@
-from typing import Optional, List
-from pydantic import BaseModel, Field
+from typing import Optional, List, Any, Union
+from pydantic import BaseModel, Field, ConfigDict, field_validator
 
 class ReceiptExtractionResult(BaseModel):
     Store: str = Field(..., description="Name of the store or merchant")
@@ -27,15 +27,30 @@ class DriveUploadResponse(BaseModel):
     webViewLink: str
     webContentLink: Optional[str] = None
     folder_id: str
-
 class ReceiptRecord(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
     id: Optional[str] = None
-    Store: str
-    Date: str
-    Amount: float
+    Store: str = Field(default="Unknown")
+    Date: str = Field(default="")
+    Amount: float = Field(default=0.0)
     Drive_Image_URL: Optional[str] = None
-    createdAt: Optional[str] = None
+    createdAt: Optional[Any] = None
     notes: Optional[str] = None
+
+    @field_validator("Amount", mode="before")
+    @classmethod
+    def parse_amount(cls, v):
+        if isinstance(v, (int, float)):
+            return float(v)
+        if isinstance(v, str):
+            try:
+                import re
+                cleaned = re.sub(r"[^\d.-]", "", v)
+                return float(cleaned)
+            except Exception:
+                return 0.0
+        return 0.0
 
 class SheetsExportRequest(BaseModel):
     access_token: str = Field(..., description="Google OAuth access token with drive.file scope")

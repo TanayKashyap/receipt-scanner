@@ -154,7 +154,22 @@ export async function fetchUserReceipts(userId) {
       const snapshot = await getDocs(q);
       const list = [];
       snapshot.forEach(docSnap => {
-        list.push({ id: docSnap.id, ...docSnap.data() });
+        const data = docSnap.data();
+        let createdAtStr = "";
+        if (data.createdAt) {
+          if (typeof data.createdAt.toDate === "function") {
+            createdAtStr = data.createdAt.toDate().toISOString();
+          } else if (data.createdAt.seconds) {
+            createdAtStr = new Date(data.createdAt.seconds * 1000).toISOString();
+          } else {
+            createdAtStr = String(data.createdAt);
+          }
+        }
+        list.push({ 
+          id: docSnap.id, 
+          ...data,
+          createdAt: createdAtStr || new Date().toISOString()
+        });
       });
       return list;
     } catch (err) {
