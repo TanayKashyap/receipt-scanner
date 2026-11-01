@@ -56,9 +56,10 @@ def test_clean_json_response():
     assert res2["Store"] == "Trader Joe's"
     assert res2["Amount"] == 34.22
 
-def test_extract_receipt_data_demo_fallback():
+def test_extract_receipt_data_demo_fallback(monkeypatch):
+    from app.config import settings
+    monkeypatch.setattr(settings, "GEMINI_API_KEY", "")
     dummy_bytes = create_dummy_image_bytes()
-    # When api key is missing or default, it provides demo fallback
     result = extract_receipt_data(dummy_bytes)
     assert result.Store != ""
     assert result.Amount > 0

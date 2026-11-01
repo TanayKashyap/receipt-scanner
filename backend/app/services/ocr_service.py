@@ -128,8 +128,14 @@ def extract_receipt_data(image_bytes: bytes, mime_type: str = "image/jpeg") -> R
         import google.generativeai as genai
         genai.configure(api_key=api_key)
         
-        # Determine candidate models (allowing fallback from gemini-1.5-pro / flash)
-        candidate_models = [settings.GEMINI_MODEL, "gemini-1.5-flash", "gemini-1.5-pro", "gemini-2.0-flash"]
+        # Determine candidate models
+        candidate_models = [
+            settings.GEMINI_MODEL,
+            "gemini-3.8-flash",
+            "gemini-2.5-flash",
+            "gemini-flash-latest",
+            "gemini-1.5-flash"
+        ]
         # De-duplicate while preserving order
         candidate_models = list(dict.fromkeys(candidate_models))
         

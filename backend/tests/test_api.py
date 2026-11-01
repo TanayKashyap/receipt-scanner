@@ -27,7 +27,9 @@ def test_root_endpoint():
     data = res.json()
     assert data["status"] == "online"
 
-def test_ocr_extract_base64_demo():
+def test_ocr_extract_base64_demo(monkeypatch):
+    from app.config import settings
+    monkeypatch.setattr(settings, "GEMINI_API_KEY", "")
     b64 = create_base64_image()
     res = client.post("/api/ocr/extract-base64", json={
         "image_base64": b64,
