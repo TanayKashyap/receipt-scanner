@@ -3,7 +3,7 @@
  * Reduces 8-15MB mobile photos down to ~150KB.
  * Drastically accelerates upload speed and Gemini model inference.
  */
-export function compressReceiptImage(src, maxDim = 1200, quality = 0.8) {
+export function compressReceiptImage(src, maxDim = 1600, quality = 0.85) {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {

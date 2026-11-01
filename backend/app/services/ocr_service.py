@@ -124,7 +124,7 @@ def extract_receipt_data(image_bytes: bytes, mime_type: str = "image/jpeg") -> R
             
         # Fast downscale: receipts do not need >1200px resolution for high-accuracy OCR.
         # This saves massive bandwidth and reduces model token processing time from 4s down to ~1s!
-        max_dim = 1200
+        max_dim = 1600
         if max(pil_image.size) > max_dim:
             pil_image.thumbnail((max_dim, max_dim), Image.Resampling.LANCZOS)
             
