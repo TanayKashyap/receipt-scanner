@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Camera, RefreshCw, Upload, Sparkles, AlertTriangle, Image as ImageIcon } from "lucide-react";
+import { compressReceiptImage } from "../services/imageUtils";
 
 export default function CameraScanner({ onCapture, isProcessing }) {
   const [streamActive, setStreamActive] = useState(false);
@@ -61,7 +62,7 @@ export default function CameraScanner({ onCapture, isProcessing }) {
     setFacingMode(prev => prev === "environment" ? "user" : "environment");
   };
 
-  const capturePhoto = () => {
+  const capturePhoto = async () => {
     if (!videoRef.current || !canvasRef.current) return;
 
     const video = videoRef.current;
@@ -73,9 +74,17 @@ export default function CameraScanner({ onCapture, isProcessing }) {
     const ctx = canvas.getContext("2d");
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    const base64Image = canvas.toDataURL("image/jpeg", 0.92);
+    const base64Image = canvas.toDataURL("image/jpeg", 0.9);
     stopCamera();
-    onCapture(base64Image, "image/jpeg");
+
+    try {
+      // Compress to ~150KB for near-instant low-cost Gemini inference
+      const compressed = await compressReceiptImage(base64Image, 1200, 0.8);
+      onCapture(compressed, "image/jpeg");
+    } catch (err) {
+      console.warn("Image compression fallback:", err);
+      onCapture(base64Image, "image/jpeg");
+    }
   };
 
   const handleFileUpload = (e) => {
@@ -83,9 +92,16 @@ export default function CameraScanner({ onCapture, isProcessing }) {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = () => {
+    reader.onload = async () => {
       stopCamera();
-      onCapture(reader.result, file.type || "image/jpeg");
+      try {
+        // Compress client-side before sending to backend
+        const compressed = await compressReceiptImage(reader.result, 1200, 0.8);
+        onCapture(compressed, "image/jpeg");
+      } catch (err) {
+        console.warn("Upload compression fallback:", err);
+        onCapture(reader.result, file.type || "image/jpeg");
+      }
     };
     reader.readAsDataURL(file);
   };
@@ -124,7 +140,7 @@ export default function CameraScanner({ onCapture, isProcessing }) {
           <div style={{ 
             position: "absolute", 
             inset: 0, 
-            background: "rgba(9, 13, 22, 0.85)", 
+            background: "rgba(11, 15, 23, 0.88)", 
             display: "flex", 
             flexDirection: "column", 
             alignItems: "center", 
@@ -132,12 +148,12 @@ export default function CameraScanner({ onCapture, isProcessing }) {
             gap: "14px",
             zIndex: 10
           }}>
-            <Sparkles size={36} color="#38bdf8" className="animate-spin" />
+            <Sparkles size={36} color="var(--accent-emerald-light)" className="animate-spin" />
             <div style={{ fontWeight: 700, fontSize: "1.1rem", color: "#ffffff" }}>
-              Gemini AI Analyzing Receipt...
+              Gemini AI Analyzing Receipt (CAD)...
             </div>
             <div style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>
-              Extracting Store, Date & Total Amount
+              Fast Extraction: Store, Date & Total (CAD)
             </div>
           </div>
         )}
@@ -156,11 +172,11 @@ export default function CameraScanner({ onCapture, isProcessing }) {
               width: 56,
               height: 56,
               borderRadius: "50%",
-              background: "rgba(56, 189, 248, 0.1)",
+              background: "var(--accent-emerald-subtle)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              color: "var(--accent-cyan)"
+              color: "var(--accent-emerald-light)"
             }}>
               <Camera size={28} />
             </div>

@@ -58,7 +58,7 @@ export default function ExportModal({
             <div>
               <h3 style={{ fontSize: "1.15rem", fontWeight: 700 }}>Export to Google Sheets</h3>
               <p style={{ color: "var(--text-muted)", fontSize: "0.8rem" }}>
-                Grouped by Store & Chronologically Sorted
+                Formatted Canadian Dollar (CAD) Expense Ledger
               </p>
             </div>
           </div>
@@ -82,7 +82,7 @@ export default function ExportModal({
                   className="form-input" 
                   value={sheetTitle}
                   onChange={(e) => setSheetTitle(e.target.value)}
-                  placeholder="Receipts_Export_2026-11-01"
+                  placeholder="Receipts_CAD_Export_2026-11-01"
                 />
               </div>
             </div>
@@ -99,6 +99,7 @@ export default function ExportModal({
               gap: "6px"
             }}>
               <div>📊 <strong>Entries to Export:</strong> {receipts.length} receipts</div>
+              <div>🇨🇦 <strong>Currency:</strong> Canadian Dollars (CAD)</div>
               <div>🏬 <strong>Unique Stores:</strong> {new Set(receipts.map(r => r.Store)).size} stores</div>
               <div>📁 <strong>Destination:</strong> Google Drive &gt; <code>Receipt_Scanner_App/</code></div>
             </div>
@@ -167,7 +168,7 @@ export default function ExportModal({
               <span style={{ 
                 fontFamily: "var(--font-mono)", 
                 fontSize: "0.8rem", 
-                color: "var(--accent-cyan)",
+                color: "var(--accent-emerald-light)",
                 overflow: "hidden",
                 textOverflow: "ellipsis",
                 whiteSpace: "nowrap"

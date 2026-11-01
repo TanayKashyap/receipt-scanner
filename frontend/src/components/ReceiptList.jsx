@@ -86,10 +86,10 @@ export default function ReceiptList({ receipts, onDelete, onExportClick }) {
           className="btn btn-primary" 
           onClick={onExportClick}
           disabled={receipts.length === 0}
-          title="Export all receipts to formatted Google Sheet"
+          title="Export all receipts to formatted Google Sheet in Canadian Dollars (CAD)"
         >
-          <FileSpreadsheet size={17} />
-          <span>Export to Google Sheets</span>
+          <FileSpreadsheet size={16} />
+          <span>Export to Sheets</span>
         </button>
       </div>
 

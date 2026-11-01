@@ -153,7 +153,7 @@ export default function CorrectionLoop({
                 type="text" 
                 required
                 className="form-input" 
-                placeholder="e.g. Trader Joe's, Costco"
+                placeholder="e.g. Tim Hortons, Loblaws, Canadian Tire"
                 value={store}
                 onChange={(e) => setStore(e.target.value)}
               />
@@ -182,7 +182,7 @@ export default function CorrectionLoop({
           <div className="form-group">
             <label className="form-label">
               <DollarSign size={15} />
-              <span>Total Amount Paid (USD)</span>
+              <span>Total Amount Paid (CAD $)</span>
             </label>
             <div className="input-wrapper">
               <DollarSign size={18} className="input-icon" />
@@ -196,6 +196,7 @@ export default function CorrectionLoop({
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
               />
+              <span className="currency-badge-input">CAD</span>
             </div>
           </div>
 

@@ -22,25 +22,25 @@ export default function StatsOverview({ receipts }) {
     }
   }
 
-  const formatUSD = (val) => new Intl.NumberFormat("en-US", {
+  const formatCAD = (val) => new Intl.NumberFormat("en-CA", {
     style: "currency",
-    currency: "USD"
+    currency: "CAD"
   }).format(val);
 
   return (
     <div className="stats-grid">
       <div className="stat-card glass-panel">
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <span className="stat-label">Total Spent</span>
-          <DollarSign size={18} color="var(--accent-cyan)" />
+          <span className="stat-label">Total Spent (CAD)</span>
+          <DollarSign size={17} color="var(--accent-emerald-light)" />
         </div>
-        <div className="stat-value">{formatUSD(totalSpend)}</div>
+        <div className="stat-value">{formatCAD(totalSpend)}</div>
       </div>
 
       <div className="stat-card glass-panel">
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <span className="stat-label">Receipts Scanned</span>
-          <Receipt size={18} color="var(--accent-indigo)" />
+          <span className="stat-label">Receipts Count</span>
+          <Receipt size={17} color="var(--accent-emerald)" />
         </div>
         <div className="stat-value">{totalCount}</div>
       </div>
@@ -48,9 +48,9 @@ export default function StatsOverview({ receipts }) {
       <div className="stat-card glass-panel">
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <span className="stat-label">Top Merchant</span>
-          <ShoppingBag size={18} color="var(--accent-purple)" />
+          <ShoppingBag size={17} color="var(--accent-amber)" />
         </div>
-        <div className="stat-value" style={{ fontSize: "1.2rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        <div className="stat-value" style={{ fontSize: "1.1rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {topStore}
         </div>
       </div>
@@ -58,9 +58,9 @@ export default function StatsOverview({ receipts }) {
       <div className="stat-card glass-panel">
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <span className="stat-label">Avg / Receipt</span>
-          <TrendingUp size={18} color="var(--accent-emerald)" />
+          <TrendingUp size={17} color="var(--accent-emerald-light)" />
         </div>
-        <div className="stat-value">{formatUSD(avgAmount)}</div>
+        <div className="stat-value">{formatCAD(avgAmount)}</div>
       </div>
     </div>
   );

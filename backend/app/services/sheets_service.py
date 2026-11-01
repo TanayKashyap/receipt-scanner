@@ -103,10 +103,10 @@ def export_receipts_to_sheet(
         # Row 3: Blank
         # Row 4: Column Headers: Store | Date | Amount | Receipt Image Link | Notes
         rows: List[List[Any]] = [
-            [f"Receipts Expense Report — {today_str}", "", "", "", ""],
-            [f"Exported via Receipt Scanner PWA | Total Entries: {len(records)} | Total Spent: ${total_amount:,.2f}", "", "", "", ""],
+            [f"Receipts Expense Report (CAD) — {today_str}", "", "", "", ""],
+            [f"Exported via Receipt Scanner PWA | Total Entries: {len(records)} | Total Spent: ${total_amount:,.2f} CAD", "", "", "", ""],
             ["", "", "", "", ""],
-            ["Store / Merchant", "Transaction Date", "Amount (USD)", "Image Link", "Notes"]
+            ["Store / Merchant", "Transaction Date", "Amount (CAD)", "Image Link", "Notes"]
         ]
         
         format_requests = []
@@ -119,7 +119,7 @@ def export_receipts_to_sheet(
             # Store Group Header Row
             rows.append([f"🏬 {store}", "", "", "", f"{len(store_records)} receipts"])
             
-            # Formatting for store section header
+            # Formatting for store section header (Subtle sage/emerald theme)
             format_requests.append({
                 "repeatCell": {
                     "range": {
@@ -131,8 +131,8 @@ def export_receipts_to_sheet(
                     },
                     "cell": {
                         "userEnteredFormat": {
-                            "backgroundColor": {"red": 0.93, "green": 0.95, "blue": 1.0}, # Soft indigo
-                            "textFormat": {"bold": True, "foregroundColor": {"red": 0.15, "green": 0.23, "blue": 0.36}}
+                            "backgroundColor": {"red": 0.93, "green": 0.97, "blue": 0.94}, # Soft emerald/sage
+                            "textFormat": {"bold": True, "foregroundColor": {"red": 0.05, "green": 0.25, "blue": 0.15}}
                         }
                     },
                     "fields": "userEnteredFormat(backgroundColor,textFormat)"
@@ -153,7 +153,7 @@ def export_receipts_to_sheet(
                 current_row_idx += 1
                 
             # Store Subtotal Row
-            rows.append(["", f"Subtotal ({store})", store_subtotal, "", ""])
+            rows.append(["", f"Subtotal ({store}) CAD", store_subtotal, "", ""])
             format_requests.append({
                 "repeatCell": {
                     "range": {
@@ -183,7 +183,7 @@ def export_receipts_to_sheet(
             
         # Grand Total Row
         grand_total_row_idx = current_row_idx
-        rows.append(["GRAND TOTAL", "", total_amount, "", f"All {len(records)} entries"])
+        rows.append(["GRAND TOTAL (CAD)", "", total_amount, "", f"All {len(records)} entries"])
         
         # 5. Push row values to Sheet
         target_range = f"'{target_sheet_title}'!A1"

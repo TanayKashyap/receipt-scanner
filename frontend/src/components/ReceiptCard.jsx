@@ -2,23 +2,23 @@ import React from "react";
 import { Store, Calendar, ExternalLink, Trash2, Tag } from "lucide-react";
 
 export default function ReceiptCard({ receipt, onDelete }) {
-  const formattedAmount = new Intl.NumberFormat("en-US", {
+  const formattedAmount = new Intl.NumberFormat("en-CA", {
     style: "currency",
-    currency: "USD"
+    currency: "CAD"
   }).format(receipt.Amount || 0);
 
   return (
     <div className="receipt-card glass-panel animate-fade-in">
       <div className="receipt-info-left">
         <div className="store-badge-icon">
-          <Store size={22} />
+          <Store size={20} />
         </div>
         <div>
           <div className="receipt-store-title">{receipt.Store}</div>
           <div className="receipt-date-sub">
             <span>{receipt.Date}</span>
             {receipt.notes && (
-              <span style={{ marginLeft: "8px", color: "var(--accent-cyan)" }}>
+              <span style={{ marginLeft: "8px", color: "var(--accent-emerald-light)" }}>
                 • {receipt.notes}
               </span>
             )}

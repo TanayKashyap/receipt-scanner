@@ -1,24 +1,27 @@
 import React from "react";
 import { useAuth } from "../context/AuthContext";
-import { Scan, LogIn, LogOut, ShieldCheck, Sparkles, AlertCircle } from "lucide-react";
+import { Scan, LogIn, LogOut, ShieldCheck, Sparkles } from "lucide-react";
 
-export default function Navbar({ onOpenSetupGuide }) {
-  const { currentUser, loginWithGoogle, logout, demoMode, isFirebaseConfigured, toggleDemoMode } = useAuth();
+export default function Navbar() {
+  const { currentUser, loginWithGoogle, logout, demoMode, toggleDemoMode } = useAuth();
 
   return (
     <header className="navbar glass-panel">
       <div className="nav-brand">
         <div className="brand-icon">
-          <Scan size={22} color="#ffffff" />
+          <Scan size={20} color="#ffffff" />
         </div>
         <div>
-          <div className="brand-title">Receipt Scanner</div>
+          <div className="brand-title">
+            <span>Receipt Scanner</span>
+            <span className="badge badge-cad" style={{ fontSize: "0.68rem", padding: "2px 7px" }}>CAD $</span>
+          </div>
           <div className="brand-subtitle">Gemini AI • Drive Archiver • Sheets Export</div>
         </div>
       </div>
 
       <div className="nav-actions">
-        {/* Demo Mode Toggle Badge */}
+        {/* Demo / Live Auth Toggle */}
         <button 
           className={`badge ${demoMode ? 'badge-demo' : 'badge-success'}`}
           onClick={toggleDemoMode}
@@ -27,20 +30,20 @@ export default function Navbar({ onOpenSetupGuide }) {
         >
           {demoMode ? (
             <>
-              <Sparkles size={13} />
-              <span>Demo Mode</span>
+              <Sparkles size={12} />
+              <span>Demo</span>
             </>
           ) : (
             <>
-              <ShieldCheck size={13} />
-              <span>Live Auth</span>
+              <ShieldCheck size={12} />
+              <span>Auth</span>
             </>
           )}
         </button>
 
         {/* User Account / Sign In */}
         {currentUser ? (
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             {currentUser.photoURL ? (
               <img 
                 src={currentUser.photoURL} 
@@ -54,9 +57,10 @@ export default function Navbar({ onOpenSetupGuide }) {
                   display: "flex", 
                   alignItems: "center", 
                   justifyContent: "center", 
-                  background: "var(--accent-indigo)",
+                  background: "var(--accent-emerald-dark)",
                   fontWeight: "bold",
-                  fontSize: "0.85rem"
+                  fontSize: "0.85rem",
+                  color: "#ffffff"
                 }}
               >
                 {(currentUser.displayName || "U").charAt(0).toUpperCase()}
@@ -66,14 +70,15 @@ export default function Navbar({ onOpenSetupGuide }) {
               className="btn btn-secondary btn-icon" 
               onClick={logout} 
               title="Sign Out"
+              style={{ width: 36, height: 36, minHeight: 36 }}
             >
-              <LogOut size={16} />
+              <LogOut size={15} />
             </button>
           </div>
         ) : (
-          <button className="btn btn-primary" onClick={loginWithGoogle}>
-            <LogIn size={16} />
-            <span>Sign in with Google</span>
+          <button className="btn btn-primary" onClick={loginWithGoogle} style={{ padding: "8px 14px", minHeight: 40, fontSize: "0.85rem" }}>
+            <LogIn size={15} />
+            <span>Sign In</span>
           </button>
         )}
       </div>
